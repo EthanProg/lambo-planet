@@ -1,2 +1,2 @@
-src/vendors.js
-src/libs/table2excel.js
+src/directives
+src/utils/throttle.js
