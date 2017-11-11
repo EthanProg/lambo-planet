@@ -1,10 +1,10 @@
 <template>
     <Breadcrumb>
         <BreadcrumbItem 
-            v-for="item in $store.state.currentPath" 
+            v-for="item in currentPath"
             :href="item.path" 
             :key="item.name"
-        >{{itemTitle(item)}}</BreadcrumbItem>
+        >{{item.title}}</BreadcrumbItem>
     </Breadcrumb>
 </template>
 
@@ -15,13 +15,7 @@ export default {
         currentPath: Array
     },
     methods: {
-        itemTitle (item) {
-            if (typeof item.title === 'object') {
-                return this.$t(item.title.i18n);
-            } else {
-                return item.title;
-            }
-        }
+
     }
 };
 </script>
