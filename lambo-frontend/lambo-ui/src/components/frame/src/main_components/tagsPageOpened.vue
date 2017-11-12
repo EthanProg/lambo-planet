@@ -19,142 +19,133 @@
         <div ref="scrollBody" class="tags-inner-scroll-body" :style="{left: tagBodyLeft + 'px'}">
             <transition-group name="taglist-moving-animation">
                 <Tag
-                    type="dot"
-                    v-for="(item, index) in pageTagsList"
-                    ref="tagsPageOpened"
-                    :key="item.name"
-                    :name="item.name"
-                    @on-close="closePage"
-                    @click.native="linkTo(item)"
-                    :closable="item.name==='home_index'?false:true"
-                    :color="item.children?(item.children[0].name===currentPageName?'blue':'default'):(item.name===currentPageName?'blue':'default')"
-                >{{ itemTitle(item) }}</Tag>
+                        type="dot"
+                        v-for="(item, index) in pageOpenedList"
+                        ref="tagsPageOpened"
+                        :key="item.name"
+                        :name="item.name"
+                        @on-close="closePage"
+                        @click.native="linkTo(item)"
+                        :closable="item.name==='home_index'?false:true"
+                        :color="item.children?(item.children[0].name===currentPageName?'blue':'default'):(item.name===currentPageName?'blue':'default')"
+                >{{ item.title }}</Tag>
             </transition-group>
         </div>
     </div>
 </template>
 
 <script>
-import Vue from 'vue';
-export default {
-    name: 'tagsPageOpened',
-    data () {
-        return {
-            currentPageName: this.$route.name,
-            tagBodyLeft: 0,
-            currentScrollBodyWidth: 0,
-            refsTag: [],
-            tagsCount: 1
-        };
-    },
-    props: {
-        pageTagsList: Array
-    },
-    computed: {
-        title () {
-            return this.$store.state.currentTitle;
+    import util from '../../../../libs/util';
+    export default {
+        name: 'tagsPageOpened',
+        data () {
+            return {
+                tagBodyLeft: 0,
+                currentScrollBodyWidth: 0,
+                refsTag: [],
+            };
         },
-        tagsList () {
-            return this.$store.state.pageOpenedList;
-        }
-    },
-    methods: {
-        itemTitle (item) {
-            if (typeof item.title === 'object') {
-                return this.$t(item.title.i18n);
-            } else {
-                return item.title;
-            }
+        props: {
+            pageOpenedList: Array,
+            currentPageName: Number,
         },
-        closePage (event, name) {
-            this.$store.commit('removeTag', name);
-            this.$store.commit('closePage', name);
-            localStorage.pageOpenedList = JSON.stringify(this.$store.state.pageOpenedList);
-            if (this.currentPageName === name) {
-                let lastPageName = '';
-                if (this.$store.state.pageOpenedList.length > 1) {
-                    lastPageName = this.$store.state.pageOpenedList[1].name;
-                } else {
-                    lastPageName = this.$store.state.pageOpenedList[0].name;
-                }
-                this.$router.push({
-                    name: lastPageName
+        computed: {
+
+        },
+        methods: {
+            closePage (event, name) {
+                this.pageOpenedList.map((item, index) => {
+                    if (item.name === name) {
+                        this.pageOpenedList.splice(index, 1);
+                    }
                 });
-            }
-        },
-        linkTo (item) {
-            let routerObj = {};
-            routerObj.name = item.name;
-            if (item.argu) {
-                routerObj.params = item.argu;
-            }
-            if (item.query) {
-                routerObj.query = item.query;
-            }
-            this.$router.push(routerObj);
-        },
-        handlescroll (e) {
-            let left = 0;
-            if (e.wheelDelta > 0) {
-                left = Math.min(0, this.tagBodyLeft + e.wheelDelta);
-            } else {
-                if (this.$refs.scrollCon.offsetWidth - 100 < this.$refs.scrollBody.offsetWidth) {
-                    if (this.tagBodyLeft < -(this.$refs.scrollBody.offsetWidth - this.$refs.scrollCon.offsetWidth + 100)) {
-                        left = this.tagBodyLeft;
+                localStorage.pageOpenedList = JSON.stringify(this.pageOpenedList);
+                if(this.pageOpenedList.length>0){
+                    this.$router.push({
+                        name : this.pageOpenedList[0].name
+                    });
+                }
+            },
+            linkTo (item) {
+                let routerObj = {};
+                routerObj.name = item.name;
+                if (item.argu) {
+                    routerObj.params = item.argu;
+                }
+                if (item.query) {
+                    routerObj.query = item.query;
+                }
+                util.openNewPage(item.name);
+                this.$router.push(routerObj);
+            },
+            handlescroll (e) {
+                let left = 0;
+                if (e.wheelDelta > 0) {
+                    left = Math.min(0, this.tagBodyLeft + e.wheelDelta);
+                } else {
+                    if (this.$refs.scrollCon.offsetWidth - 100 < this.$refs.scrollBody.offsetWidth) {
+                        if (this.tagBodyLeft < -(this.$refs.scrollBody.offsetWidth - this.$refs.scrollCon.offsetWidth + 100)) {
+                            left = this.tagBodyLeft;
+                        } else {
+                            left = Math.max(this.tagBodyLeft + e.wheelDelta, this.$refs.scrollCon.offsetWidth - this.$refs.scrollBody.offsetWidth - 100);
+                        }
                     } else {
-                        left = Math.max(this.tagBodyLeft + e.wheelDelta, this.$refs.scrollCon.offsetWidth - this.$refs.scrollBody.offsetWidth - 100);
+                        this.tagBodyLeft = 0;
                     }
+                }
+                this.tagBodyLeft = left;
+            },
+            handleTagsOption (type) {
+                if (type === 'clearAll') {
+                    this.pageOpenedList.splice(1);
+                    this.$router.push({
+                        name: this.pageOpenedList[0].name
+                    });
+                    localStorage.currentPageName = this.pageOpenedList[0].name;
+                    localStorage.pageOpenedList = JSON.stringify(this.pageOpenedList);
                 } else {
-                    this.tagBodyLeft = 0;
-                }
-            }
-            this.tagBodyLeft = left;
-        },
-        handleTagsOption (type) {
-            if (type === 'clearAll') {
-                this.$store.commit('clearAllTags');
-            } else {
-                this.$store.commit('clearOtherTags', this);
-            }
-            this.tagBodyLeft = 0;
-        },
-        moveToView (tag) {
-            if (tag.offsetLeft < -this.tagBodyLeft) {
-                // 标签在可视区域左侧
-                this.tagBodyLeft = -tag.offsetLeft + 10;
-            } else if (tag.offsetLeft + 10 > -this.tagBodyLeft && tag.offsetLeft + tag.offsetWidth < -this.tagBodyLeft + this.$refs.scrollCon.offsetWidth - 100) {
-                // 标签在可视区域
-            } else {
-                // 标签在可视区域右侧
-                this.tagBodyLeft = -(tag.offsetLeft - (this.$refs.scrollCon.offsetWidth - 100 - tag.offsetWidth) + 20);
-            }
-        }
-    },
-    mounted () {
-        this.refsTag = this.$refs.tagsPageOpened;
-        setTimeout(() => {
-            this.refsTag.forEach((item, index) => {
-                if (this.$route.name === item.name) {
-                    let tag = this.refsTag[index].$el;
-                    this.moveToView(tag);
-                }
-            });
-        }, 1);  // 这里不设定时器就会有偏移bug
-        this.tagsCount = this.tagsList.length;
-    },
-    watch: {
-        '$route' (to) {
-            this.currentPageName = to.name;
-            this.$nextTick(() => {
-                this.refsTag.forEach((item, index) => {
-                    if (to.name === item.name) {
-                        let tag = this.refsTag[index].$el;
-                        this.moveToView(tag);
+                    let currentName = this.currentPageName;
+                    let currentIndex = 0;
+                    this.pageOpenedList.forEach((item, index) => {
+                        if (item.name === currentName) {
+                            currentIndex = index;
+                        }
+                    });
+                    if (currentIndex === 0) {
+                        this.pageOpenedList.splice(1);
+                    } else {
+                        this.pageOpenedList.splice(currentIndex + 1);
+                        this.pageOpenedList.splice(0, currentIndex);
                     }
+                    localStorage.pageOpenedList = JSON.stringify(this.pageOpenedList);
+                }
+                this.tagBodyLeft = 0;
+            },
+            moveToView (tag) {
+                if (tag.offsetLeft < -this.tagBodyLeft) {
+                    // 标签在可视区域左侧
+                    this.tagBodyLeft = -tag.offsetLeft + 10;
+                } else if (tag.offsetLeft + 10 > -this.tagBodyLeft && tag.offsetLeft + tag.offsetWidth < -this.tagBodyLeft + this.$refs.scrollCon.offsetWidth - 100) {
+                    // 标签在可视区域
+                } else {
+                    // 标签在可视区域右侧
+                    this.tagBodyLeft = -(tag.offsetLeft - (this.$refs.scrollCon.offsetWidth - 100 - tag.offsetWidth) + 20);
+                }
+            }
+        },
+        watch: {
+            '$route' (to) {
+                var self = this;
+                localStorage.currentPageName = to.name;
+                this.$nextTick(() => {
+                    self.refsTag.forEach((item, index) => {
+                        if (to.name === item.name) {
+                            let tag = self.refsTag[index].$el;
+                            self.moveToView(tag);
+                        }
+                    });
                 });
-            });
-            this.tagsCount = this.tagsList.length;
+            }
         }
-    }
-};
+    };
 </script>

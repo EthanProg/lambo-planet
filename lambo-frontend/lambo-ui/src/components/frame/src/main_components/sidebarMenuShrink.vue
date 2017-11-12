@@ -2,22 +2,15 @@
     <div>
         <template v-for="(item, index) in menuList">
             <div style="text-align: center;" :key="index">
-                <Dropdown transfer v-if="item.children.length !== 1" placement="right-start" :key="index" @on-click="changeMenu">
+                <Dropdown transfer placement="right-start" :key="index" @on-click="changeMenu">
                     <Button style="width: 70px;margin-left: -5px;padding:10px 0;" type="text">
                         <Icon :size="20" :color="iconColor" :type="item.icon"></Icon>
                     </Button>
+                    <sidebarMenuShrink v-if="item.children.children" :menuList = "item.children" :iconColor="iconColor"></sidebarMenuShrink>
                     <DropdownMenu style="width: 200px;" slot="list">
                         <template v-for="(child, i) in item.children">
-                            <DropdownItem :name="child.name" :key="i"><Icon :type="child.icon"></Icon><span style="padding-left:10px;">{{ itemTitle(child) }}</span></DropdownItem>
+                            <DropdownItem :name="child.name" :key="i"><Icon :type="child.icon"></Icon><span style="padding-left:10px;">{{ child.title }}</span></DropdownItem>
                         </template>
-                    </DropdownMenu>
-                </Dropdown>
-                <Dropdown transfer v-else placement="right-start" :key="index" @on-click="changeMenu">
-                    <Button @click="changeMenu(item.children[0].name)" style="width: 70px;margin-left: -5px;padding:10px 0;" type="text">
-                        <Icon :size="20" :color="iconColor" :type="item.icon"></Icon>
-                    </Button>
-                    <DropdownMenu style="width: 200px;" slot="list">
-                        <DropdownItem :name="item.children[0].name" :key="'d' + index"><Icon :type="item.icon"></Icon><span style="padding-left:10px;">{{ itemTitle(item.children[0]) }}</span></DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
             </div>
@@ -26,52 +19,61 @@
 </template>
 
 <script>
-import util from '@/libs/util';
-import Vue from 'vue';
-export default {
-    name: 'sidebarMenuShrink',
-    props: {
-        menuList: {
-            type: Array
+    import util from '../../../../libs/util';
+    import sidebarMenuShrink from './sidebarMenuShrink.vue';
+    export default {
+        name: 'sidebarMenuShrink',
+        props: {
+            menuList: {
+                type: Array
+            },
+            iconColor: {
+                type: String,
+                default: 'white'
+            }
         },
-        iconColor: {
-            type: String,
-            default: 'white'
-        }
-    },
-    data () {
-        return {
-            currentPageName: this.$route.name,
-            openedSubmenuArr: this.$store.state.openedSubmenuArr
-        };
-    },
-    computed: {
-        tagsList () {
-            return this.$store.state.tagsList;
-        }
-    },
-    methods: {
-        changeMenu (active) {
-            if (active !== 'accesstest_index') {
-                util.openNewPage(this, active);
+        data () {
+            return {
+                currentPageName: 0,
+                openedSubmenuArr: []
+            };
+        },
+        components: {
+            sidebarMenuShrink
+        },
+        computed: {
+
+        },
+        methods: {
+            changeMenu (active) {
+                localStorage.activeName = active;
+                util.openNewPage(active);
                 this.$router.push({
                     name: active
                 });
+            },
+        },
+        watch: {
+            '$route' (to) {
+                this.currentPageName = to.name;
+                //改变currentPath
+                var path = {
+                    title:to.meta.title,
+                    path:to.path,
+                    name:to.name
+                }
+                var currentPath = [];
+                currentPath.push(path);
+                this.$emit("currentPath",currentPath);
+                localStorage.currentPath = JSON.stringify(currentPath);
+                //改变pageTagsList
+                this.$emit("pageOpenedList",JSON.parse(localStorage.pageOpenedList));
+                this.$emit("currentPageName",this.currentPageName);
             }
         },
-        itemTitle (item) {
-            if (typeof item.title === 'object') {
-                return this.$t(item.title.i18n);
-            } else {
-                return item.title;
-            }
+        create(){
+            this.currentPageName = localStorage.currentPageName;
+            this.openedSubmenuArr = JSON.parse(localStorage.openedSubmenuArr);
         }
-    },
-    watch: {
-        '$route' (to) {
-            this.currentPageName = to.name;
-            localStorage.currentPageName = to.name;
-        }
-    }
-};
+    };
 </script>

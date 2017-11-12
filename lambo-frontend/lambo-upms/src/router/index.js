@@ -7,6 +7,7 @@ import organizationIndex from '@/components/organization/index'
 import userIndex from '@/components/user/index'
 import roleIndex from '@/components/role/index'
 import permissionIndex from '@/components/permission/index'
+import sessionIndex from '@/components/session/index'
 import logIndex from '@/components/log/index'
 
 Vue.use(Router)
@@ -30,32 +31,58 @@ export default new Router({
       children: [
         {
           path: 'manage/system/index',
-          name: '系统管理',
+          meta:{
+            title: '系统管理',
+          },
+          name:'2',
           component: systemIndex
         },
         {
           path: 'manage/organization/index',
-          name: '组织管理',
+          meta:{
+            title: '组织管理',
+          },
+          name:'3',
           component: organizationIndex
         },
         {
           path: 'manage/user/index',
-          name: '用户管理',
+          meta:{
+            title: '用户管理',
+          },
+          name:'6',
           component: userIndex
         },
         {
           path: 'manage/role/index',
-          name: '角色管理',
+          meta:{
+            title: '角色管理',
+          },
+          name:'5',
           component: roleIndex
         },
         {
           path: 'manage/permission/index',
-          name: '权限管理',
+          meta:{
+            title: '权限管理',
+          },
+          name:'39',
           component: permissionIndex
         },
         {
+          path: 'manage/session/index',
+          meta:{
+            title: '回话管理',
+          },
+          name:'14',
+          component: sessionIndex
+        },
+        {
           path: 'manage/log/index',
-          name: '日志记录',
+          meta:{
+            title: '日志记录',
+          },
+          name:'15',
           component: logIndex
         }
       ]
